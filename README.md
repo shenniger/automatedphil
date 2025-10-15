@@ -1,6 +1,6 @@
 # The Automated Philosopher
 
-"embark on the ships! There is a new world to discover – and more than one!" (Friedrich Nietzsche, The Gay Science)
+"To the ships, you philosophers! There is a new world to discover – and more than one!" (Friedrich Nietzsche, The Gay Science)
 
 Can an LLM discover new philosophical insights?
 
