@@ -17,7 +17,9 @@ Each new proposition leads to other new propositions, creating a virtuous circle
 ## Prerequisites
 
 - Python 3.7+
-- Anthropic API key
+- Either:
+  - Anthropic API key, OR
+  - Google Cloud Project with Vertex AI enabled
 
 ## Installation
 
@@ -28,10 +30,23 @@ Each new proposition leads to other new propositions, creating a virtuous circle
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the project root:
+3. Create a `.env` file in the project root with one of the following configurations:
+
+**Option A: Using Anthropic API directly**
 ```
 ANTHROPIC_API_KEY=your_api_key_here
 ```
+
+**Option B: Using Google Vertex AI**
+```
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_REGION=us-east5
+```
+
+**Optional environment variables:**
+- `PORT` - Port for the web server (default: 5000)
+
+Note: When using Vertex AI, ensure you have proper Google Cloud authentication configured (Application Default Credentials or service account).
 
 ## Usage
 

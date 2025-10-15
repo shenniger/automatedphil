@@ -16,31 +16,34 @@ app.secret_key = secrets.token_hex(16)
 
 # API configuration
 API_KEY = os.getenv('ANTHROPIC_API_KEY')
+GOOGLE_CLOUD_PROJECT = os.getenv('GOOGLE_CLOUD_PROJECT')
+GOOGLE_CLOUD_REGION = os.getenv('GOOGLE_CLOUD_REGION', 'us-east5')
+
+# Initialize Anthropic client based on environment
+if GOOGLE_CLOUD_PROJECT:
+    from anthropic import AnthropicVertex
+    anthropic_client = AnthropicVertex(
+        project_id=GOOGLE_CLOUD_PROJECT,
+        region=GOOGLE_CLOUD_REGION
+    )
+else:
+    from anthropic import Anthropic
+    anthropic_client = Anthropic(api_key=API_KEY)
 
 # Session storage: dictionary keyed by session ID
 sessions = {}
 
 def query_claude(prompt):
-    """Query Claude API with a prompt"""
-    headers = {
-        "x-api-key": API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "claude-opus-4-1-20250805",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 1024
-    }
+    """Query Claude API with a prompt (works with both Anthropic and Vertex AI)"""
     try:
-        response = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=data)
-        if response.status_code == 200:
-            return response.json()['content'][0]['text']
-        else:
-            print(f"Claude API Error - Status {response.status_code}: {response.text}")
-            return None
+        message = anthropic_client.messages.create(
+            model="claude-opus-4-1-20250805",
+            max_tokens=1024,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return message.content[0].text
     except Exception as e:
         print(f"Claude API Exception: {str(e)}")
         return None
@@ -519,4 +522,5 @@ def add_proposition():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=True, port=port)
