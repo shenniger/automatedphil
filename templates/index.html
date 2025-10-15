@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Automated Philosopher</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: white;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.8;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            color: #2c3e50;
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+
+        .item {
+            margin-bottom: 1em;
+        }
+
+        .identifier {
+            font-size: 0.5rem;
+            color: #999;
+            font-family: 'Monaco', 'Courier New', monospace;
+            margin-right: 8px;
+        }
+
+        .content {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            display: inline;
+        }
+
+        .worth {
+            font-size: 0.5rem;
+            color: #999;
+            margin-left: 6px;
+        }
+
+        .item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .item.highlighted {
+            background-color: #ffeb3b;
+        }
+
+        .edit-mode {
+            background-color: #f0f8ff !important;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .draft-proposition {
+            margin-bottom: 1.2em;
+            background-color: #000;
+            border: 2px solid #2c3e50;
+            border-radius: 4px;
+        }
+
+        .draft-proposition.rejected {
+            background-color: #ffcdd2;
+            border-color: #f44336;
+        }
+
+        .draft-proposition.rejected .identifier,
+        .draft-proposition.rejected .content,
+        .draft-proposition.rejected .worth {
+            color: #2c3e50;
+        }
+
+        .draft-proposition.rejected .content {
+            text-decoration: line-through;
+        }
+
+        .draft-proposition .identifier {
+            font-size: 0.7rem;
+            color: #fff;
+            font-family: 'Monaco', 'Courier New', monospace;
+            margin-right: 8px;
+        }
+
+        .draft-proposition .content {
+            font-size: 1.2rem;
+            color: #fff;
+            display: inline;
+        }
+
+        .draft-proposition .worth {
+            font-size: 0.8rem;
+            color: #999;
+            margin-left: 6px;
+        }
+
+        .edit-input {
+            font-size: 0.7rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        .edit-textarea {
+            font-size: 1.8rem;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 100%;
+            resize: vertical;
+            min-height: 60px;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .submit-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .revert-btn {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .revert-btn:hover {
+            background-color: #7f8c8d;
+        }
+
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .controls {
+            text-align: center;
+        }
+
+        .control-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0 5px;
+        }
+
+        .control-btn:hover {
+            background-color: #229954;
+        }
+
+        .control-btn.stop {
+            background-color: #e74c3c;
+        }
+
+        .control-btn.stop:hover {
+            background-color: #c0392b;
+        }
+
+        .control-btn.reset {
+            background-color: #95a5a6;
+        }
+
+        .control-btn.reset:hover {
+            background-color: #7f8c8d;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+
+        .status.stopped {
+            font-style: italic;
+        }
+
+        .status.running {
+            font-style: normal;
+        }
+
+        .status-detail {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-style: italic;
+            min-height: 1.5rem;
+        }
+
+        .state-machine {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .state-item {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            background-color: #ecf0f1;
+            transition: all 0.3s ease;
+        }
+
+        .state-item.active {
+            color: #2c3e50;
+            background-color: #3498db;
+            font-weight: bold;
+            color: white;
+        }
+
+        .state-item.stopped.active {
+            font-style: italic;
+        }
+
+        .add-btn {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0 5px;
+        }
+
+        .add-btn:hover {
+            background-color: #8e44ad;
+        }
+
+        .add-form {
+            background-color: #f0f8ff;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .add-form input, .add-form textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+
+        .add-form input {
+            font-size: 0.9rem;
+        }
+
+        .add-form textarea {
+            font-size: 1rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Automated Philosopher</h1>
+
+        <div class="controls">
+            <button id="startBtn" class="control-btn">Start</button>
+            <button id="stopBtn" class="control-btn stop" style="display: none;">Stop</button>
+            <button id="resetBtn" class="control-btn reset">Reset</button>
+        </div>
+
+        <div class="state-machine">
+            <div class="state-item" data-state="Finding partners">Attention</div>
+            <div class="state-item" data-state="Synthesize">Synthesis</div>
+            <div class="state-item" data-state="Judge">Judgement</div>
+        </div>
+        <div class="status-detail" id="statusDetail"></div>
+
+        <div class="add-form hidden" id="addForm">
+            <input type="text" id="newIdentifier" placeholder="Identifier (e.g., PHI004)">
+            <textarea id="newContent" placeholder="Enter proposition text..."></textarea>
+            <button class="submit-btn" id="submitAdd">Add</button>
+            <button class="revert-btn" id="cancelAdd">Cancel</button>
+        </div>
+
+        <div id="draftProposition" class="draft-proposition hidden"></div>
+
+        {% for item in items %}
+        <div class="item" data-index="{{ loop.index0 }}">
+            <div class="view-mode">
+                <span class="identifier">{{ item.identifier }}</span>
+                <span class="content">{{ item.content }}</span>
+                <span class="worth">[{{ item.worth }}]</span>
+            </div>
+            <div class="edit-mode-content hidden">
+                <input type="text" class="edit-input identifier-input" value="{{ item.identifier }}" placeholder="Identifier">
+                <textarea class="edit-textarea content-input">{{ item.content }}</textarea>
+                <button class="submit-btn">Submit</button>
+                <button class="revert-btn">Revert</button>
+                <button class="remove-btn">Remove</button>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button id="addBtn" class="add-btn">Add Proposition</button>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusDetail = document.getElementById('statusDetail');
+        const container = document.querySelector('.container');
+        let statusInterval = null;
+        let currentItemCount = document.querySelectorAll('.item').length;
+
+        function createItemElement(item, index) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.dataset.index = index;
+
+            itemDiv.innerHTML = `
+                <div class="view-mode">
+                    <span class="identifier">${item.identifier}</span>
+                    <span class="content">${item.content}</span>
+                    <span class="worth">[${item.worth}]</span>
+                </div>
+                <div class="edit-mode-content hidden">
+                    <input type="text" class="edit-input identifier-input" value="${item.identifier}" placeholder="Identifier">
+                    <textarea class="edit-textarea content-input">${item.content}</textarea>
+                    <button class="submit-btn">Submit</button>
+                    <button class="revert-btn">Revert</button>
+                    <button class="remove-btn">Remove</button>
+                </div>
+            `;
+
+            attachItemListeners(itemDiv);
+            return itemDiv;
+        }
+
+        function attachItemListeners(item) {
+            const viewMode = item.querySelector('.view-mode');
+            const editMode = item.querySelector('.edit-mode-content');
+            const submitBtn = item.querySelector('.submit-btn');
+            const revertBtn = item.querySelector('.revert-btn');
+            const removeBtn = item.querySelector('.remove-btn');
+            const identifierInput = item.querySelector('.identifier-input');
+            const contentInput = item.querySelector('.content-input');
+
+            viewMode.addEventListener('click', () => {
+                identifierInput.value = item.querySelector('.view-mode .identifier').textContent;
+                contentInput.value = item.querySelector('.view-mode .content').textContent;
+
+                item.classList.add('edit-mode');
+                viewMode.classList.add('hidden');
+                editMode.classList.remove('hidden');
+            });
+
+            submitBtn.addEventListener('click', async () => {
+                const index = item.dataset.index;
+                const identifier = identifierInput.value;
+                const content = contentInput.value;
+
+                const response = await fetch('/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ index: parseInt(index), identifier, content })
+                });
+
+                if (response.ok) {
+                    // Fetch all items to get the reordered list
+                    const itemsResponse = await fetch('/get_items');
+                    const itemsData = await itemsResponse.json();
+
+                    // Remove all current items
+                    document.querySelectorAll('.item').forEach(el => el.remove());
+
+                    // Get the add button container
+                    const addBtnContainer = container.querySelector('div[style*="text-align: center"]');
+
+                    // Re-add all items in sorted order
+                    itemsData.items.forEach((itemData, index) => {
+                        const newItem = createItemElement(itemData, index);
+                        container.insertBefore(newItem, addBtnContainer);
+                    });
+
+                    currentItemCount = itemsData.items.length;
+                }
+            });
+
+            revertBtn.addEventListener('click', () => {
+                item.classList.remove('edit-mode');
+                editMode.classList.add('hidden');
+                viewMode.classList.remove('hidden');
+            });
+
+            removeBtn.addEventListener('click', async () => {
+                const identifier = item.querySelector('.view-mode .identifier').textContent;
+                if (!confirm(`Are you sure you want to remove proposition ${identifier}?`)) {
+                    return;
+                }
+
+                const index = item.dataset.index;
+                const response = await fetch('/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ index: parseInt(index) })
+                });
+
+                if (response.ok) {
+                    // Fetch all items to get the updated list
+                    const itemsResponse = await fetch('/get_items');
+                    const itemsData = await itemsResponse.json();
+
+                    // Remove all current items
+                    document.querySelectorAll('.item').forEach(el => el.remove());
+
+                    // Get the add button container
+                    const addBtnContainer = container.querySelector('div[style*="text-align: center"]');
+
+                    // Re-add all items in sorted order
+                    itemsData.items.forEach((itemData, index) => {
+                        const newItem = createItemElement(itemData, index);
+                        container.insertBefore(newItem, addBtnContainer);
+                    });
+
+                    currentItemCount = itemsData.items.length;
+                }
+            });
+        }
+
+        const draftProposition = document.getElementById('draftProposition');
+
+        function parseIdentifier(identifier) {
+            // Split by dots and convert to numbers
+            return identifier.split('.').map(part => {
+                const num = parseInt(part);
+                return isNaN(num) ? part : num;
+            });
+        }
+
+        function compareIdentifiers(id1, id2) {
+            const p1 = parseIdentifier(id1);
+            const p2 = parseIdentifier(id2);
+
+            const minLength = Math.min(p1.length, p2.length);
+            for (let i = 0; i < minLength; i++) {
+                if (typeof p1[i] === 'number' && typeof p2[i] === 'number') {
+                    if (p1[i] !== p2[i]) {
+                        return p1[i] - p2[i];
+                    }
+                } else if (typeof p1[i] === 'string' && typeof p2[i] === 'string') {
+                    const cmp = p1[i].localeCompare(p2[i]);
+                    if (cmp !== 0) return cmp;
+                } else {
+                    // Mixed types: strings come before numbers
+                    return typeof p1[i] === 'string' ? -1 : 1;
+                }
+            }
+            // If all parts are equal, shorter identifier comes first
+            return p1.length - p2.length;
+        }
+
+        function insertItemInOrder(newItem) {
+            const newIdentifier = newItem.querySelector('.view-mode .identifier').textContent;
+            const items = Array.from(document.querySelectorAll('.item'));
+
+            // Find the position to insert
+            let insertBefore = null;
+            for (const item of items) {
+                const itemIdentifier = item.querySelector('.view-mode .identifier').textContent;
+                if (compareIdentifiers(newIdentifier, itemIdentifier) < 0) {
+                    insertBefore = item;
+                    break;
+                }
+            }
+
+            if (insertBefore) {
+                container.insertBefore(newItem, insertBefore);
+            } else {
+                container.appendChild(newItem);
+            }
+        }
+
+        async function updateStatus() {
+            const response = await fetch('/status');
+            const data = await response.json();
+
+            statusDetail.textContent = data.status_detail || '';
+
+            // Update state machine display
+            // Map "Number" state to "Synthesize" for display purposes
+            let displayState = data.state;
+            if (data.state === 'Number') {
+                displayState = 'Synthesize';
+            }
+
+            document.querySelectorAll('.state-item').forEach(item => {
+                if (item.dataset.state === displayState) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update highlighting
+            document.querySelectorAll('.item').forEach(item => {
+                const identifier = item.querySelector('.view-mode .identifier').textContent;
+                if (data.highlighted_ids && data.highlighted_ids.includes(identifier)) {
+                    item.classList.add('highlighted');
+                } else {
+                    item.classList.remove('highlighted');
+                }
+            });
+
+            // Update draft proposition
+            if (data.draft_proposition) {
+                const draft = data.draft_proposition;
+                draftProposition.innerHTML = `
+                    <span class="identifier">${draft.identifier}</span>
+                    <span class="content">${draft.content}</span>
+                `;
+                draftProposition.classList.remove('hidden', 'rejected');
+            } else if (data.rejected_proposition) {
+                const rejected = data.rejected_proposition;
+                draftProposition.innerHTML = `
+                    <span class="identifier">${rejected.identifier}</span>
+                    <span class="content">${rejected.content}</span>
+                    <span class="worth">[${rejected.worth}]</span>
+                `;
+                draftProposition.classList.remove('hidden');
+                draftProposition.classList.add('rejected');
+            } else {
+                draftProposition.classList.add('hidden');
+            }
+
+            // Check if new items were added
+            if (data.item_count > currentItemCount) {
+                const itemsResponse = await fetch('/get_items');
+                const itemsData = await itemsResponse.json();
+
+                // Get current identifiers to check what's new
+                const existingIds = new Set(Array.from(document.querySelectorAll('.item')).map(
+                    item => item.querySelector('.view-mode .identifier').textContent
+                ));
+
+                // Add only new items in sorted order
+                itemsData.items.forEach((item, index) => {
+                    if (!existingIds.has(item.identifier)) {
+                        const newItem = createItemElement(item, index);
+                        insertItemInOrder(newItem);
+                    }
+                });
+
+                currentItemCount = data.item_count;
+            }
+        }
+
+        startBtn.addEventListener('click', async () => {
+            await fetch('/start', { method: 'POST' });
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+
+            // Poll status every 100ms
+            statusInterval = setInterval(updateStatus, 100);
+        });
+
+        stopBtn.addEventListener('click', async () => {
+            await fetch('/stop', { method: 'POST' });
+            stopBtn.style.display = 'none';
+            startBtn.style.display = 'inline-block';
+
+            // Stop polling
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+
+            await updateStatus();
+        });
+
+        resetBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to reset to default propositions? This will delete all current propositions.')) {
+                return;
+            }
+
+            await fetch('/reset', { method: 'POST' });
+
+            // Stop polling if running
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+
+            // Reset UI state
+            stopBtn.style.display = 'none';
+            startBtn.style.display = 'inline-block';
+
+            // Reload the page to show default propositions
+            location.reload();
+        });
+
+        // Attach listeners to initial items
+        document.querySelectorAll('.item').forEach(item => {
+            attachItemListeners(item);
+        });
+
+        // Load initial status on page load
+        updateStatus();
+
+        // Add proposition form handling
+        const addBtn = document.getElementById('addBtn');
+        const addForm = document.getElementById('addForm');
+        const submitAdd = document.getElementById('submitAdd');
+        const cancelAdd = document.getElementById('cancelAdd');
+        const newIdentifier = document.getElementById('newIdentifier');
+        const newContent = document.getElementById('newContent');
+
+        addBtn.addEventListener('click', () => {
+            addForm.classList.remove('hidden');
+            newIdentifier.value = '';
+            newContent.value = '';
+        });
+
+        cancelAdd.addEventListener('click', () => {
+            addForm.classList.add('hidden');
+        });
+
+        submitAdd.addEventListener('click', async () => {
+            const identifier = newIdentifier.value.trim();
+            const content = newContent.value.trim();
+
+            if (!identifier || !content) {
+                alert('Please provide both identifier and content');
+                return;
+            }
+
+            // Disable button and show loading state
+            submitAdd.disabled = true;
+            submitAdd.textContent = 'Judging...';
+
+            const response = await fetch('/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier, content })
+            });
+
+            // Re-enable button
+            submitAdd.disabled = false;
+            submitAdd.textContent = 'Add';
+
+            if (response.ok) {
+                // Fetch all items to get the reordered list
+                const itemsResponse = await fetch('/get_items');
+                const itemsData = await itemsResponse.json();
+
+                // Remove all current items
+                document.querySelectorAll('.item').forEach(el => el.remove());
+
+                // Get the add button container
+                const addBtnContainer = container.querySelector('div[style*="text-align: center"]');
+
+                // Re-add all items in sorted order
+                itemsData.items.forEach((itemData, index) => {
+                    const newItem = createItemElement(itemData, index);
+                    container.insertBefore(newItem, addBtnContainer);
+                });
+
+                currentItemCount = itemsData.items.length;
+
+                // Hide the form
+                addForm.classList.add('hidden');
+            } else {
+                alert('Failed to add proposition');
+            }
+        });
+    </script>
+</body>
+</html>
