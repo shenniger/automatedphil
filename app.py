@@ -37,7 +37,7 @@ def query_claude(prompt):
     """Query Claude API with a prompt (works with both Anthropic and Vertex AI)"""
     try:
         message = anthropic_client.messages.create(
-            model="claude-opus-4-1-20250805",
+            model="claude-sonnet-4-5",
             max_tokens=1024,
             messages=[
                 {"role": "user", "content": prompt}
@@ -69,56 +69,149 @@ def format_storage_as_md(storage):
         markdown += f"- **{item['identifier']}**: {item['content']}\n"
     return markdown
 
-def get_default_storage():
-    return [
-        {
-            "identifier": "1",
-            "content": "The world is all that is the case.",
-            "worth": 100
-        },
-        {
-            "identifier": "1.10",
-            "content": "The world is the totality of facts, not of things.",
-            "worth": 95
-        },
-        {
-            "identifier": "1.11",
-            "content": "The world is determined by the facts, and by these being all the facts.",
-            "worth": 90
-        },
-        {
-            "identifier": "1.12",
-            "content": "For the totality of facts determines what is the case, and also whatever is not the case.",
-            "worth": 88
-        },
-        {
-            "identifier": "1.13",
-            "content": "The facts in logical space are the world.",
-            "worth": 85
-        },
-        {
-            "identifier": "1.20",
-            "content": "The world divides into facts.",
-            "worth": 92
-        },
-        {
-            "identifier": "1.21",
-            "content": "Each item can be the case or not the case while everything else remains the same.",
-            "worth": 87
-        },
-        {
-            "identifier": "2",
-            "content": "What is the case—a fact—is the existence of states of affairs.",
-            "worth": 98
-        },
-        {
-            "identifier": "2.01",
-            "content": "A state of affairs (a state of things) is a combination of objects (things).",
-            "worth": 93
-        }
-    ]
+# Storage options for the user to choose from
+STORAGE_OPTIONS = {
+    "empty": {
+        "name": "Empty",
+        "description": "Write your own",
+        "data": [
+            {
+                "identifier": "1.1",
+                "content": "I think therefore I am.",
+                "worth": 100
+            },
+            {
+                "identifier": "1.2",
+                "content": "Is the Automated Philosopher?",
+                "worth": 95
+            }
+        ]
+    },
+    "tractatus": {
+        "name": "Beginning of the Tractatus",
+        "description": "Wittgenstein's Tractatus Logico-Philosophicus",
+        "data": [
+            {
+                "identifier": "1",
+                "content": "The world is all that is the case.",
+                "worth": 100
+            },
+            {
+                "identifier": "1.10",
+                "content": "The world is the totality of facts, not of things.",
+                "worth": 95
+            },
+            {
+                "identifier": "1.11",
+                "content": "The world is determined by the facts, and by these being all the facts.",
+                "worth": 90
+            },
+            {
+                "identifier": "1.12",
+                "content": "For the totality of facts determines what is the case, and also whatever is not the case.",
+                "worth": 88
+            },
+            {
+                "identifier": "1.13",
+                "content": "The facts in logical space are the world.",
+                "worth": 85
+            },
+            {
+                "identifier": "1.20",
+                "content": "The world divides into facts.",
+                "worth": 92
+            },
+            {
+                "identifier": "1.21",
+                "content": "Each item can be the case or not the case while everything else remains the same.",
+                "worth": 87
+            },
+            {
+                "identifier": "2",
+                "content": "What is the case—a fact—is the existence of states of affairs.",
+                "worth": 98
+            },
+            {
+                "identifier": "2.01",
+                "content": "A state of affairs (a state of things) is a combination of objects (things).",
+                "worth": 93
+            }
+        ]
+    },
+    "moral_agency": {
+        "name": "Moral Agency",
+        "description": "Is AI a moral patient or agent?",
+        "data": [
+            {
+                "identifier": "1.1",
+                "content": "Moral agency is the ability to make moral judgments and act on them, taking responsibility for those actions based on a concept of right and wrong.",
+                "worth": 100
+            },
+            {
+                "identifier": "2.1",
+                "content": "Moral patienthood is the status of being an entity that deserves moral consideration, meaning its interests and well-being matter for their own sake, and it can be the object of moral concern and responsibility from others.",
+                "worth": 95
+            },
+            {
+                "identifier": "3.1",
+                "content": "ChatGPT answers people's questions and helps them make decisions.",
+                "worth": 90
+            }
+        ]
+    },
+    "descartes_dreaming": {
+        "name": "Descartes' Dreaming Argument",
+        "description": "Blumenfeld version",
+        "data": [
+            {
+                "identifier": "1.1",
+                "content": "I've had dreams that were qualitatively indistinguishable from waking experiences.",
+                "worth": 100
+            },
+            {
+                "identifier": "2.1",
+                "content": "Therefore, the qualitative character of my experience doesn't guarantee that I'm not now dreaming.",
+                "worth": 95
+            },
+            {
+                "identifier": "3.1",
+                "content": "If the qualitative character of my experience doesn't guarantee that I'm not now dreaming, then I can't know that I'm not now dreaming.",
+                "worth": 90
+            },
+            {
+                "identifier": "4.1",
+                "content": "Therefore, I can't know that I'm not now dreaming.",
+                "worth": 88
+            },
+            {
+                "identifier": "5.1",
+                "content": "If I can't know that I'm not now dreaming, then I can't know that I'm not always dreaming.",
+                "worth": 85
+            },
+            {
+                "identifier": "6.1",
+                "content": "Therefore, I can't know that I'm not always dreaming.",
+                "worth": 83
+            },
+            {
+                "identifier": "7.1",
+                "content": "If I can't know that I'm not always dreaming, then I can't know to be true any belief which is based on my experience.",
+                "worth": 80
+            },
+            {
+                "identifier": "8.1",
+                "content": "Therefore, I can't know to be true any belief which is based on my experience.",
+                "worth": 78
+            }
+        ]
+    }
+}
 
-def init_session():
+def get_default_storage():
+    """Get default storage (for backward compatibility)"""
+    return STORAGE_OPTIONS["empty"]["data"].copy()
+
+def init_session(storage_option=None):
     """Initialize session data if it doesn't exist"""
     if 'session_id' not in session:
         session['session_id'] = secrets.token_hex(16)
@@ -126,8 +219,18 @@ def init_session():
     session_id = session['session_id']
 
     if session_id not in sessions:
+        # Determine which storage to use
+        if storage_option and storage_option in STORAGE_OPTIONS:
+            initial_storage = STORAGE_OPTIONS[storage_option]["data"].copy()
+            session['storage_option'] = storage_option
+        elif 'storage_option' in session and session['storage_option'] in STORAGE_OPTIONS:
+            initial_storage = STORAGE_OPTIONS[session['storage_option']]["data"].copy()
+        else:
+            initial_storage = get_default_storage()
+            session['storage_option'] = 'empty'
+
         sessions[session_id] = {
-            'storage': get_default_storage(),
+            'storage': initial_storage,
             'current_state': 'Stopped',
             'is_running': False,
             'state_thread': None,
@@ -137,7 +240,8 @@ def init_session():
             'highlighted_ids': [],  # Identifiers of propositions to highlight
             'draft_proposition': None,  # Draft proposition being worked on
             'rejected_proposition': None,  # Rejected proposition to show
-            'rejected_cycles_remaining': 0  # Cycles to keep showing rejected proposition
+            'rejected_cycles_remaining': 0,  # Cycles to keep showing rejected proposition
+            'cycle_count': 0  # Track number of complete cycles
         }
 
     return session_id
@@ -332,6 +436,15 @@ async def judge(session_id):
     # Clear temp data for next cycle
     temp.clear()
 
+    # Increment cycle count
+    session_data['cycle_count'] += 1
+
+    # Check if we've completed 10 cycles
+    if session_data['cycle_count'] >= 10:
+        session_data['is_running'] = False
+        session_data['status_detail'] = 'The Automated Philosopher has completed 10 cycles and is now resting. Start again to continue.'
+        return "Stopped"
+
     await asyncio.sleep(1)
     return "Finding partners"
 
@@ -371,9 +484,30 @@ def start_state_machine_thread(session_id):
 
 @app.route('/')
 def home():
-    session_data = get_session_data()
-    sorted_items = sorted(session_data['storage'], key=sort_by_identifier)
-    return render_template('index.html', items=sorted_items)
+    return render_template('index.html', items=[], storage_options=STORAGE_OPTIONS)
+
+@app.route('/select_storage', methods=['POST'])
+def select_storage():
+    """Handle storage option selection"""
+    data = request.json
+    storage_option = data.get('storage_option')
+
+    if storage_option not in STORAGE_OPTIONS:
+        return jsonify({'error': 'Invalid storage option'}), 400
+
+    # Clear existing session data if any
+    if 'session_id' in session:
+        session_id = session['session_id']
+        if session_id in sessions:
+            del sessions[session_id]
+
+    # Set the storage option in session
+    session['storage_option'] = storage_option
+
+    # Initialize new session with selected storage
+    init_session(storage_option)
+
+    return jsonify({'status': 'success', 'storage_option': storage_option})
 
 @app.route('/update', methods=['POST'])
 def update():
@@ -404,6 +538,7 @@ def start():
     if not session_data['is_running']:
         session_data['is_running'] = True
         session_data['last_poll_time'] = time.time()  # Reset poll time on start
+        session_data['cycle_count'] = 0  # Reset cycle count on start
         session_data['state_thread'] = threading.Thread(
             target=start_state_machine_thread,
             args=(session_id,),
@@ -425,23 +560,39 @@ def stop():
     session_data['highlighted_ids'] = []
     session_data['rejected_cycles_remaining'] = 0
     session_data['temp_data'] = {}
+    session_data['cycle_count'] = 0  # Reset cycle count
     return jsonify({'status': 'stopped'})
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    session_data = get_session_data()
-    # Stop the state machine if running
-    session_data['is_running'] = False
-    # Reset storage to default
-    session_data['storage'] = get_default_storage()
-    session_data['current_state'] = 'Stopped'
-    session_data['temp_data'] = {}
-    session_data['status_detail'] = 'The Automated Philosopher is resting.'
-    session_data['highlighted_ids'] = []
-    session_data['draft_proposition'] = None
-    session_data['rejected_proposition'] = None
-    session_data['rejected_cycles_remaining'] = 0
+    # Clear the session completely
+    if 'session_id' in session:
+        session_id = session['session_id']
+        if session_id in sessions:
+            # Stop any running state machine
+            sessions[session_id]['is_running'] = False
+            del sessions[session_id]
+
+    # Clear storage option to show selection dialog again
+    session.pop('storage_option', None)
+    session.pop('session_id', None)
+
     return jsonify({'status': 'reset'})
+
+@app.route('/change_storage', methods=['POST'])
+def change_storage():
+    """Allow user to change storage option"""
+    # Clear the session
+    if 'session_id' in session:
+        session_id = session['session_id']
+        if session_id in sessions:
+            del sessions[session_id]
+
+    # Clear storage option
+    session.pop('storage_option', None)
+    session.pop('session_id', None)
+
+    return jsonify({'status': 'success'})
 
 @app.route('/status', methods=['GET'])
 def get_status():

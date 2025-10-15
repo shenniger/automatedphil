@@ -19,6 +19,126 @@
             margin: 0 auto;
         }
 
+        /* Storage Selection Modal */
+        .selection-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .selection-overlay.hidden {
+            display: none;
+        }
+
+        .selection-container {
+            max-width: 620px;
+            width: 100%;
+        }
+
+        .selection-title {
+            text-align: center;
+            font-size: 2.2rem;
+            color: #2c3e50;
+            font-weight: 200;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .selection-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .option-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .option-card:hover {
+            border-color: #2c3e50;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-card.selected {
+            border-color: #2c3e50;
+            border-width: 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-name {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .option-description {
+            font-size: 1rem;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        .option-icon {
+            font-size: 1.5rem;
+            opacity: 0.7;
+        }
+
+        .continue-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            display: block;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .continue-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .continue-btn:hover {
+            background: #34495e;
+        }
+
+        .continue-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         h1 {
             text-align: center;
             font-size: 2rem;
@@ -147,7 +267,7 @@
             background-color: #2980b9;
         }
 
-        .revert-btn {
+        .cancel-btn {
             background-color: #95a5a6;
             color: white;
             border: none;
@@ -157,7 +277,7 @@
             font-size: 0.9rem;
         }
 
-        .revert-btn:hover {
+        .cancel-btn:hover {
             background-color: #7f8c8d;
         }
 
@@ -305,6 +425,28 @@
     </style>
 </head>
 <body>
+    <!-- Storage Selection Overlay -->
+    <div class="selection-overlay" id="selectionOverlay">
+        <div class="selection-container">
+            <h1 class="selection-title">The Automated Philosopher</h1>
+            <div class="selection-subtitle">Choose a philosophical topic to explore</div>
+
+            <div class="options-grid">
+                {% for key, option in storage_options.items() %}
+                <div class="option-card" data-option="{{ key }}">
+                    <div class="option-name">
+                        <span class="option-icon">📚</span>
+                        <span>{{ option.name }}</span>
+                    </div>
+                    <div class="option-description">{{ option.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button class="continue-btn" id="continueBtn">Sapere Aude</button>
+        </div>
+    </div>
+
     <div class="container">
         <h1>The Automated Philosopher</h1>
 
@@ -325,7 +467,7 @@
             <input type="text" id="newIdentifier" placeholder="Identifier (e.g., PHI004)">
             <textarea id="newContent" placeholder="Enter proposition text..."></textarea>
             <button class="submit-btn" id="submitAdd">Add</button>
-            <button class="revert-btn" id="cancelAdd">Cancel</button>
+            <button class="cancel-btn" id="cancelAdd">Cancel</button>
         </div>
 
         <div id="draftProposition" class="draft-proposition hidden"></div>
@@ -341,7 +483,7 @@
                 <input type="text" class="edit-input identifier-input" value="{{ item.identifier }}" placeholder="Identifier">
                 <textarea class="edit-textarea content-input">{{ item.content }}</textarea>
                 <button class="submit-btn">Submit</button>
-                <button class="revert-btn">Revert</button>
+                <button class="cancel-btn">Cancel Editing</button>
                 <button class="remove-btn">Remove</button>
             </div>
         </div>
@@ -358,8 +500,86 @@
         const resetBtn = document.getElementById('resetBtn');
         const statusDetail = document.getElementById('statusDetail');
         const container = document.querySelector('.container');
+        const selectionOverlay = document.getElementById('selectionOverlay');
+        const continueBtn = document.getElementById('continueBtn');
+        const optionCards = document.querySelectorAll('.option-card');
         let statusInterval = null;
         let currentItemCount = document.querySelectorAll('.item').length;
+        let selectedOption = null;
+
+        // Storage selection handling
+        optionCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove selected class from all cards
+                optionCards.forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to clicked card
+                card.classList.add('selected');
+
+                // Store selected option
+                selectedOption = card.dataset.option;
+
+                // Show continue button
+                continueBtn.classList.add('visible');
+            });
+        });
+
+        continueBtn.addEventListener('click', async () => {
+            if (!selectedOption) return;
+
+            // Disable button
+            continueBtn.disabled = true;
+            continueBtn.textContent = 'Loading...';
+
+            try {
+                const response = await fetch('/select_storage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ storage_option: selectedOption })
+                });
+
+                if (response.ok) {
+                    // Hide selection overlay
+                    selectionOverlay.classList.add('hidden');
+
+                    // Load items
+                    await loadItems();
+                } else {
+                    alert('Failed to select storage option');
+                    continueBtn.disabled = false;
+                    continueBtn.textContent = 'Sapere Aude';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred');
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Sapere Aude';
+            }
+        });
+
+        async function loadItems() {
+            const itemsResponse = await fetch('/get_items');
+            const itemsData = await itemsResponse.json();
+
+            // Remove all current items
+            document.querySelectorAll('.item').forEach(el => el.remove());
+
+            // Get the add button container
+            const addBtnContainer = container.querySelector('div[style*="text-align: center"]');
+
+            // Re-add all items in sorted order
+            itemsData.items.forEach((itemData, index) => {
+                const newItem = createItemElement(itemData, index);
+                container.insertBefore(newItem, addBtnContainer);
+            });
+
+            currentItemCount = itemsData.items.length;
+
+            // Update status after loading items
+            await updateStatus();
+        }
 
         function createItemElement(item, index) {
             const itemDiv = document.createElement('div');
@@ -376,7 +596,7 @@
                     <input type="text" class="edit-input identifier-input" value="${item.identifier}" placeholder="Identifier">
                     <textarea class="edit-textarea content-input">${item.content}</textarea>
                     <button class="submit-btn">Submit</button>
-                    <button class="revert-btn">Revert</button>
+                    <button class="cancel-btn">Cancel Editing</button>
                     <button class="remove-btn">Remove</button>
                 </div>
             `;
@@ -389,7 +609,7 @@
             const viewMode = item.querySelector('.view-mode');
             const editMode = item.querySelector('.edit-mode-content');
             const submitBtn = item.querySelector('.submit-btn');
-            const revertBtn = item.querySelector('.revert-btn');
+            const cancelBtn = item.querySelector('.cancel-btn');
             const removeBtn = item.querySelector('.remove-btn');
             const identifierInput = item.querySelector('.identifier-input');
             const contentInput = item.querySelector('.content-input');
@@ -437,7 +657,7 @@
                 }
             });
 
-            revertBtn.addEventListener('click', () => {
+            cancelBtn.addEventListener('click', () => {
                 item.classList.remove('edit-mode');
                 editMode.classList.add('hidden');
                 viewMode.classList.remove('hidden');
@@ -515,6 +735,7 @@
         function insertItemInOrder(newItem) {
             const newIdentifier = newItem.querySelector('.view-mode .identifier').textContent;
             const items = Array.from(document.querySelectorAll('.item'));
+            const addBtnContainer = container.querySelector('div[style*="text-align: center"]');
 
             // Find the position to insert
             let insertBefore = null;
@@ -529,7 +750,8 @@
             if (insertBefore) {
                 container.insertBefore(newItem, insertBefore);
             } else {
-                container.appendChild(newItem);
+                // Insert before the add button container
+                container.insertBefore(newItem, addBtnContainer);
             }
         }
 
@@ -631,7 +853,7 @@
         });
 
         resetBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to reset to default propositions? This will delete all current propositions.')) {
+            if (!confirm('Are you sure you want to reset? This will delete all current propositions and return to storage selection.')) {
                 return;
             }
 
@@ -647,8 +869,19 @@
             stopBtn.style.display = 'none';
             startBtn.style.display = 'inline-block';
 
-            // Reload the page to show default propositions
-            location.reload();
+            // Clear items
+            document.querySelectorAll('.item').forEach(el => el.remove());
+            currentItemCount = 0;
+
+            // Reset selection state
+            selectedOption = null;
+            optionCards.forEach(c => c.classList.remove('selected'));
+            continueBtn.classList.remove('visible');
+            continueBtn.disabled = false;
+            continueBtn.textContent = 'Sapere Aude';
+
+            // Show selection overlay
+            selectionOverlay.classList.remove('hidden');
         });
 
         // Attach listeners to initial items
@@ -656,8 +889,15 @@
             attachItemListeners(item);
         });
 
-        // Load initial status on page load
-        updateStatus();
+        // Check if we have items on page load
+        // If no items, show selection overlay; otherwise hide it
+        if (currentItemCount === 0) {
+            selectionOverlay.classList.remove('hidden');
+        } else {
+            selectionOverlay.classList.add('hidden');
+            // Load initial status on page load
+            updateStatus();
+        }
 
         // Add proposition form handling
         const addBtn = document.getElementById('addBtn');
