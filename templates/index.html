@@ -179,8 +179,34 @@
             background-color: #f9f9f9;
         }
 
+        /* Fade from green to white over 5 cycles */
+        .item.age-0 {
+            background-color: #76ff03; /* Bright green */
+        }
+
+        .item.age-1 {
+            background-color: #b9f6ca; /* Light green */
+        }
+
+        .item.age-2 {
+            background-color: #e0f7e9; /* Very light green */
+        }
+
+        .item.age-3 {
+            background-color: #f0fdf4; /* Almost white */
+        }
+
+        .item.age-4 {
+            background-color: #f8fef9; /* Nearly white */
+        }
+
+        .item.age-5 {
+            background-color: white; /* White */
+        }
+
+        /* Highlighted state overrides age-based background */
         .item.highlighted {
-            background-color: #ffeb3b;
+            background-color: #ffeb3b !important;
         }
 
         .edit-mode {
@@ -451,7 +477,8 @@
         <h1>The Automated Philosopher</h1>
 
         <div class="controls">
-            <button id="startBtn" class="control-btn">Start</button>
+            <button id="startBtn" class="control-btn">Start Loop</button>
+            <button id="oneCycleBtn" class="control-btn">One Cycle &gt;</button>
             <button id="stopBtn" class="control-btn stop" style="display: none;">Stop</button>
             <button id="resetBtn" class="control-btn reset">Reset</button>
         </div>
@@ -496,6 +523,7 @@
 
     <script>
         const startBtn = document.getElementById('startBtn');
+        const oneCycleBtn = document.getElementById('oneCycleBtn');
         const stopBtn = document.getElementById('stopBtn');
         const resetBtn = document.getElementById('resetBtn');
         const statusDetail = document.getElementById('statusDetail');
@@ -583,8 +611,9 @@
 
         function createItemElement(item, index) {
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'item';
+            itemDiv.className = 'item age-5';  // Start white by default
             itemDiv.dataset.index = index;
+            itemDiv.dataset.createdCycle = item.created_cycle || 0;
 
             itemDiv.innerHTML = `
                 <div class="view-mode">
@@ -776,14 +805,37 @@
                 }
             });
 
-            // Update highlighting
+            // Update highlighting and age-based backgrounds
             document.querySelectorAll('.item').forEach(item => {
                 const identifier = item.querySelector('.view-mode .identifier').textContent;
+
+                // Handle highlighting
                 if (data.highlighted_ids && data.highlighted_ids.includes(identifier)) {
                     item.classList.add('highlighted');
                 } else {
                     item.classList.remove('highlighted');
                 }
+
+                // Calculate age and apply background color
+                const createdCycle = parseInt(item.dataset.createdCycle) || 0;
+                const currentCycle = data.cycle_count || 0;
+
+                // Remove all age classes
+                for (let i = 0; i <= 5; i++) {
+                    item.classList.remove(`age-${i}`);
+                }
+
+                // Apply appropriate age class
+                let ageClass;
+                if (createdCycle === 0) {
+                    // Initial propositions always stay white
+                    ageClass = 5;
+                } else {
+                    // Items created during cycles: calculate age
+                    const age = currentCycle - createdCycle;
+                    ageClass = age < 0 ? 5 : Math.min(age, 5);
+                }
+                item.classList.add(`age-${ageClass}`);
             });
 
             // Update draft proposition
@@ -827,11 +879,34 @@
 
                 currentItemCount = data.item_count;
             }
+
+            // Detect if state machine stopped (e.g., after one cycle)
+            // Check this AFTER updating all colors and items
+            if (!data.is_running && statusInterval) {
+                // Stop polling
+                clearInterval(statusInterval);
+                statusInterval = null;
+                // Update button visibility
+                stopBtn.style.display = 'none';
+                startBtn.style.display = 'inline-block';
+                oneCycleBtn.style.display = 'inline-block';
+            }
         }
 
         startBtn.addEventListener('click', async () => {
             await fetch('/start', { method: 'POST' });
             startBtn.style.display = 'none';
+            oneCycleBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+
+            // Poll status every 100ms
+            statusInterval = setInterval(updateStatus, 100);
+        });
+
+        oneCycleBtn.addEventListener('click', async () => {
+            await fetch('/one_cycle', { method: 'POST' });
+            startBtn.style.display = 'none';
+            oneCycleBtn.style.display = 'none';
             stopBtn.style.display = 'inline-block';
 
             // Poll status every 100ms
@@ -842,6 +917,7 @@
             await fetch('/stop', { method: 'POST' });
             stopBtn.style.display = 'none';
             startBtn.style.display = 'inline-block';
+            oneCycleBtn.style.display = 'inline-block';
 
             // Stop polling
             if (statusInterval) {

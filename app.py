@@ -78,12 +78,14 @@ STORAGE_OPTIONS = {
             {
                 "identifier": "1.1",
                 "content": "I think therefore I am.",
-                "worth": 100
+                "worth": 100,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.2",
                 "content": "Is the Automated Philosopher?",
-                "worth": 95
+                "worth": 95,
+                "created_cycle": 0
             }
         ]
     },
@@ -94,47 +96,56 @@ STORAGE_OPTIONS = {
             {
                 "identifier": "1",
                 "content": "The world is all that is the case.",
-                "worth": 100
+                "worth": 100,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.10",
                 "content": "The world is the totality of facts, not of things.",
-                "worth": 95
+                "worth": 95,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.11",
                 "content": "The world is determined by the facts, and by these being all the facts.",
-                "worth": 90
+                "worth": 90,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.12",
                 "content": "For the totality of facts determines what is the case, and also whatever is not the case.",
-                "worth": 88
+                "worth": 88,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.13",
                 "content": "The facts in logical space are the world.",
-                "worth": 85
+                "worth": 85,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.20",
                 "content": "The world divides into facts.",
-                "worth": 92
+                "worth": 92,
+                "created_cycle": 0
             },
             {
                 "identifier": "1.21",
                 "content": "Each item can be the case or not the case while everything else remains the same.",
-                "worth": 87
+                "worth": 87,
+                "created_cycle": 0
             },
             {
                 "identifier": "2",
                 "content": "What is the case—a fact—is the existence of states of affairs.",
-                "worth": 98
+                "worth": 98,
+                "created_cycle": 0
             },
             {
                 "identifier": "2.01",
                 "content": "A state of affairs (a state of things) is a combination of objects (things).",
-                "worth": 93
+                "worth": 93,
+                "created_cycle": 0
             }
         ]
     },
@@ -145,17 +156,20 @@ STORAGE_OPTIONS = {
             {
                 "identifier": "1.1",
                 "content": "Moral agency is the ability to make moral judgments and act on them, taking responsibility for those actions based on a concept of right and wrong.",
-                "worth": 100
+                "worth": 100,
+                "created_cycle": 0
             },
             {
                 "identifier": "2.1",
                 "content": "Moral patienthood is the status of being an entity that deserves moral consideration, meaning its interests and well-being matter for their own sake, and it can be the object of moral concern and responsibility from others.",
-                "worth": 95
+                "worth": 95,
+                "created_cycle": 0
             },
             {
                 "identifier": "3.1",
                 "content": "ChatGPT answers people's questions and helps them make decisions.",
-                "worth": 90
+                "worth": 90,
+                "created_cycle": 0
             }
         ]
     },
@@ -166,42 +180,50 @@ STORAGE_OPTIONS = {
             {
                 "identifier": "1.1",
                 "content": "I've had dreams that were qualitatively indistinguishable from waking experiences.",
-                "worth": 100
+                "worth": 100,
+                "created_cycle": 0
             },
             {
                 "identifier": "2.1",
                 "content": "Therefore, the qualitative character of my experience doesn't guarantee that I'm not now dreaming.",
-                "worth": 95
+                "worth": 95,
+                "created_cycle": 0
             },
             {
                 "identifier": "3.1",
                 "content": "If the qualitative character of my experience doesn't guarantee that I'm not now dreaming, then I can't know that I'm not now dreaming.",
-                "worth": 90
+                "worth": 90,
+                "created_cycle": 0
             },
             {
                 "identifier": "4.1",
                 "content": "Therefore, I can't know that I'm not now dreaming.",
-                "worth": 88
+                "worth": 88,
+                "created_cycle": 0
             },
             {
                 "identifier": "5.1",
                 "content": "If I can't know that I'm not now dreaming, then I can't know that I'm not always dreaming.",
-                "worth": 85
+                "worth": 85,
+                "created_cycle": 0
             },
             {
                 "identifier": "6.1",
                 "content": "Therefore, I can't know that I'm not always dreaming.",
-                "worth": 83
+                "worth": 83,
+                "created_cycle": 0
             },
             {
                 "identifier": "7.1",
                 "content": "If I can't know that I'm not always dreaming, then I can't know to be true any belief which is based on my experience.",
-                "worth": 80
+                "worth": 80,
+                "created_cycle": 0
             },
             {
                 "identifier": "8.1",
                 "content": "Therefore, I can't know to be true any belief which is based on my experience.",
-                "worth": 78
+                "worth": 78,
+                "created_cycle": 0
             }
         ]
     }
@@ -241,7 +263,8 @@ def init_session(storage_option=None):
             'draft_proposition': None,  # Draft proposition being worked on
             'rejected_proposition': None,  # Rejected proposition to show
             'rejected_cycles_remaining': 0,  # Cycles to keep showing rejected proposition
-            'cycle_count': 0  # Track number of complete cycles
+            'cycle_count': 0,  # Track number of complete cycles
+            'single_cycle_mode': False  # Flag for running just one cycle
         }
 
     return session_id
@@ -415,7 +438,8 @@ async def judge(session_id):
         storage.append({
             'identifier': new_id,
             'content': new_prop,
-            'worth': worth
+            'worth': worth,
+            'created_cycle': session_data['cycle_count']
         })
         # Reorder storage after adding
         session_data['storage'] = sorted(storage, key=sort_by_identifier)
@@ -438,6 +462,13 @@ async def judge(session_id):
 
     # Increment cycle count
     session_data['cycle_count'] += 1
+
+    # Check if in single cycle mode
+    if session_data.get('single_cycle_mode', False):
+        session_data['is_running'] = False
+        session_data['single_cycle_mode'] = False
+        session_data['status_detail'] = 'Single cycle completed. The Automated Philosopher is resting.'
+        return "Stopped"
 
     # Check if we've completed 10 cycles
     if session_data['cycle_count'] >= 10:
@@ -538,7 +569,30 @@ def start():
     if not session_data['is_running']:
         session_data['is_running'] = True
         session_data['last_poll_time'] = time.time()  # Reset poll time on start
-        session_data['cycle_count'] = 0  # Reset cycle count on start
+        # Only set cycle_count to 1 if it's 0 (first start), otherwise preserve it
+        if session_data['cycle_count'] == 0:
+            session_data['cycle_count'] = 1
+        session_data['state_thread'] = threading.Thread(
+            target=start_state_machine_thread,
+            args=(session_id,),
+            daemon=True
+        )
+        session_data['state_thread'].start()
+
+    return jsonify({'status': 'started', 'current_state': session_data['current_state']})
+
+@app.route('/one_cycle', methods=['POST'])
+def one_cycle():
+    session_id = init_session()
+    session_data = sessions[session_id]
+
+    if not session_data['is_running']:
+        session_data['is_running'] = True
+        session_data['single_cycle_mode'] = True
+        session_data['last_poll_time'] = time.time()
+        # Only set cycle_count to 1 if it's 0 (first start), otherwise preserve it
+        if session_data['cycle_count'] == 0:
+            session_data['cycle_count'] = 1
         session_data['state_thread'] = threading.Thread(
             target=start_state_machine_thread,
             args=(session_id,),
@@ -560,7 +614,7 @@ def stop():
     session_data['highlighted_ids'] = []
     session_data['rejected_cycles_remaining'] = 0
     session_data['temp_data'] = {}
-    session_data['cycle_count'] = 0  # Reset cycle count
+    # DON'T reset cycle_count - keep it to preserve age-based colors
     return jsonify({'status': 'stopped'})
 
 @app.route('/reset', methods=['POST'])
@@ -606,7 +660,8 @@ def get_status():
         'item_count': len(session_data['storage']),
         'highlighted_ids': session_data.get('highlighted_ids', []),
         'draft_proposition': session_data.get('draft_proposition'),
-        'rejected_proposition': session_data.get('rejected_proposition')
+        'rejected_proposition': session_data.get('rejected_proposition'),
+        'cycle_count': session_data.get('cycle_count', 0)
     })
 
 @app.route('/get_items', methods=['GET'])
@@ -656,7 +711,8 @@ def add_proposition():
     new_item = {
         'identifier': identifier,
         'content': content,
-        'worth': worth
+        'worth': worth,
+        'created_cycle': session_data.get('cycle_count', 0)
     }
 
     storage.append(new_item)
