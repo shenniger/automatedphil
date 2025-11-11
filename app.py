@@ -73,7 +73,7 @@ def format_storage_as_md(storage):
 STORAGE_OPTIONS = {
     "empty": {
         "name": "Empty",
-        "description": "Write your own",
+        "description": "A blank slate to fill with your own ideas – John Locke would approve.",
         "data": [
             {
                 "identifier": "1.1",
@@ -90,8 +90,8 @@ STORAGE_OPTIONS = {
         ]
     },
     "tractatus": {
-        "name": "Beginning of the Tractatus",
-        "description": "Wittgenstein's Tractatus Logico-Philosophicus",
+        "name": "Wittgenstein's Tractatus Logico-Philosophicus",
+        "description": "The famous first few lines",
         "data": [
             {
                 "identifier": "1",

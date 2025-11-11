@@ -29,9 +29,10 @@
             background: white;
             z-index: 1000;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .selection-overlay.hidden {
@@ -52,61 +53,44 @@
             margin-bottom: 1rem;
         }
 
-        .selection-subtitle {
-            text-align: center;
-            font-size: 1.2rem;
-            color: #7f8c8d;
-            margin-bottom: 2rem;
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .option-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .option-card:hover {
-            border-color: #2c3e50;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .option-card.selected {
-            border-color: #2c3e50;
-            border-width: 2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .option-name {
-            font-size: 1.5rem;
+        .info-text {
+            font-size: 1.1rem;
             color: #2c3e50;
-            margin-bottom: 0.5rem;
-            font-weight: 300;
-            letter-spacing: 1px;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .info-text p {
+            margin: 0 0 1rem 0;
+        }
+
+        .options-list {
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .option-item {
+            margin-bottom: 1rem;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 0.5rem;
         }
 
-        .option-description {
-            font-size: 1rem;
-            color: #7f8c8d;
-            line-height: 1.6;
+        .option-radio {
+            margin-top: 0.3rem;
+            cursor: pointer;
         }
 
-        .option-icon {
-            font-size: 1.5rem;
-            opacity: 0.7;
+        .option-label {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .option-label:hover {
+            color: #34495e;
         }
 
         .continue-btn {
@@ -118,16 +102,7 @@
             cursor: pointer;
             font-size: 1.2rem;
             font-family: 'Georgia', 'Times New Roman', serif;
-            display: block;
-            margin: 0 auto;
             transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .continue-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         .continue-btn:hover {
@@ -438,8 +413,7 @@
             border-radius: 3px;
             font-family: inherit;
         }
-
-        .add-form input {
+.add-form input {
             font-size: 0.9rem;
         }
 
@@ -455,21 +429,38 @@
     <div class="selection-overlay" id="selectionOverlay">
         <div class="selection-container">
             <h1 class="selection-title">The Automated Philosopher</h1>
-            <div class="selection-subtitle">Choose a philosophical topic to explore</div>
 
-            <div class="options-grid">
+            <div class="info-text">
+              <p>The Automated Philosopher is an experimental system that engages in philosophical reasoning through iterative cycles. It maintains a collection of propositions, each of which has a score from 0 to 100. You will see it cycle through three steps:</p>
+                <ul>
+                  <li><b>Attention</b>: Choose one or two propositions to focus on in this cycle</li>
+                  <li><b>Synthesis</b>: Create a new proposition</li>
+                  <li><b>Judgment</b>: Grade the new proposition and decide whether it should be added to the collection</li>
+                </ul>
+                <p>If we are lucky, a <i>virtuous</i> loop emerges, where the propositions build off each other and become better and better.</p>
+                <p>Choose a template and explore:</p>
+            </div>
+
+            <div class="options-list">
                 {% for key, option in storage_options.items() %}
-                <div class="option-card" data-option="{{ key }}">
-                    <div class="option-name">
-                        <span class="option-icon">📚</span>
-                        <span>{{ option.name }}</span>
-                    </div>
-                    <div class="option-description">{{ option.description }}</div>
+                <div class="option-item">
+                    <input type="radio" name="storage-option" id="option-{{ key }}" value="{{ key }}" class="option-radio">
+                    <label for="option-{{ key }}" class="option-label">
+                        <strong>{{ option.name }}</strong> - {{ option.description }}
+                    </label>
                 </div>
                 {% endfor %}
             </div>
 
-            <button class="continue-btn" id="continueBtn">Sapere Aude</button>
+            <p style="text-align: center; margin-top: 1.5rem;">
+                <button class="continue-btn" id="continueBtn">Sapere Aude</button>
+            </p>
+
+            <div class="info-text" style="margin-top: 2rem; font-size: 0.95rem;">
+              <p><i>Created by <a href="https://henniger.dev">Simon Henniger</a> as part of a Master's Thesis at Ludwig Maximilian University of Munich supervised by Jurgis Karpus and Sven Nyholm.</i></p>
+              <p><i>Acknowledgements: Thanks to Harvard's <a href="https://metareflection.club/">metareflection lab</a> and Cosmos for their support.</i></p>
+                <p>Email Simon at <a href="mailto:shenniger@g.harvard.edu">shenniger@g.harvard.edu</a> with any feedback or discoveries.</p>
+            </div>
         </div>
     </div>
 
@@ -530,30 +521,19 @@
         const container = document.querySelector('.container');
         const selectionOverlay = document.getElementById('selectionOverlay');
         const continueBtn = document.getElementById('continueBtn');
-        const optionCards = document.querySelectorAll('.option-card');
+        const optionRadios = document.querySelectorAll('.option-radio');
         let statusInterval = null;
         let currentItemCount = document.querySelectorAll('.item').length;
-        let selectedOption = null;
-
-        // Storage selection handling
-        optionCards.forEach(card => {
-            card.addEventListener('click', () => {
-                // Remove selected class from all cards
-                optionCards.forEach(c => c.classList.remove('selected'));
-
-                // Add selected class to clicked card
-                card.classList.add('selected');
-
-                // Store selected option
-                selectedOption = card.dataset.option;
-
-                // Show continue button
-                continueBtn.classList.add('visible');
-            });
-        });
 
         continueBtn.addEventListener('click', async () => {
-            if (!selectedOption) return;
+            // Find which radio button is selected
+            const selectedRadio = document.querySelector('.option-radio:checked');
+            if (!selectedRadio) {
+                alert('Please select a philosophical topic to explore');
+                return;
+            }
+
+            const selectedOption = selectedRadio.value;
 
             // Disable button
             continueBtn.disabled = true;
@@ -950,9 +930,7 @@
             currentItemCount = 0;
 
             // Reset selection state
-            selectedOption = null;
-            optionCards.forEach(c => c.classList.remove('selected'));
-            continueBtn.classList.remove('visible');
+            optionRadios.forEach(radio => radio.checked = false);
             continueBtn.disabled = false;
             continueBtn.textContent = 'Sapere Aude';
 
