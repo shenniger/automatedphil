@@ -6,6 +6,7 @@ import time
 import requests
 import random
 import os
+import copy
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -231,7 +232,7 @@ STORAGE_OPTIONS = {
 
 def get_default_storage():
     """Get default storage (for backward compatibility)"""
-    return STORAGE_OPTIONS["empty"]["data"].copy()
+    return copy.deepcopy(STORAGE_OPTIONS["empty"]["data"])
 
 def init_session(storage_option=None):
     """Initialize session data if it doesn't exist"""
@@ -243,10 +244,10 @@ def init_session(storage_option=None):
     if session_id not in sessions:
         # Determine which storage to use
         if storage_option and storage_option in STORAGE_OPTIONS:
-            initial_storage = STORAGE_OPTIONS[storage_option]["data"].copy()
+            initial_storage = copy.deepcopy(STORAGE_OPTIONS[storage_option]["data"])
             session['storage_option'] = storage_option
         elif 'storage_option' in session and session['storage_option'] in STORAGE_OPTIONS:
-            initial_storage = STORAGE_OPTIONS[session['storage_option']]["data"].copy()
+            initial_storage = copy.deepcopy(STORAGE_OPTIONS[session['storage_option']]["data"])
         else:
             initial_storage = get_default_storage()
             session['storage_option'] = 'empty'
@@ -374,7 +375,7 @@ async def number(session_id):
 def judge_proposition_worth(storage, identifier, content):
     """Judge a proposition and return its worth"""
     # Create a test version with the new proposition
-    test_storage = storage.copy()
+    test_storage = copy.deepcopy(storage)
     test_storage.append({
         'identifier': identifier,
         'content': content,
